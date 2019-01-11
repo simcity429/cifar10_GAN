@@ -1,10 +1,8 @@
 from keras.datasets import cifar10
 import numpy as np
 from PIL import Image
-import math
 import os
 import keras.backend as K
-import tensorflow as tf
 from keras import models, layers, optimizers
 K.set_image_data_format('channels_first')
 
@@ -68,7 +66,8 @@ class GAN(models.Sequential):
         d_loss = self.discriminator.train_on_batch(xw, y2)
         z = self.get_z(In)
         self.discriminator.trainable = False
-        g_loss = self.train_on_batch(z, np.array([1]*In))
+        for i in range(2):
+            g_loss = self.train_on_batch(z, np.array([1]*In))
         self.discriminator.trainable = True
 
         return d_loss, g_loss
@@ -91,7 +90,7 @@ def get_x(X_train, index, BATCH_SIZE):
 
 def train():
     BATCH_SIZE = 100
-    epochs  = 50
+    epochs  = 5000
     output_fold = 'gan_generated'
     input_dim = 64
     n_train = 10000
@@ -118,12 +117,12 @@ def train():
             d_loss_l.append(d_loss)
             g_loss_l.append(g_loss)
             print('d_loss, g_loss', d_loss, g_loss)
-            if index % 10 == 1:
-                z = gan.get_z(x.shape[0])
-                w = gan.generator.predict(z, verbose=0)
-                save_image(w, output_fold, epoch, index)
-                d_loss_ll.append(d_loss_l)
-                g_loss_ll.append(g_loss_l)
+        if epoch % 10 == 1:
+            z = gan.get_z(x.shape[0])
+            w = gan.generator.predict(z, verbose=0)
+            save_image(w, output_fold, epoch, '_')
+            d_loss_ll.append(d_loss_l)
+            g_loss_ll.append(g_loss_l)
 
 
 if __name__ == '__main__':
