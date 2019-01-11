@@ -33,6 +33,9 @@ class GAN(models.Sequential):
         input_dim = self.input_dim
         model = models.Sequential()
         model.add(layers.Dense(1024, activation='tanh', input_dim=input_dim))
+        model.add(layers.Reshape((32, 32), input_shape=(1024, )))
+        model.add(layers.Conv1D(32, (32), activation='relu', padding='same'))
+        model.add(layers.Reshape((1024,), input_shape=(32, 32)))
         model.add(layers.Dense(128*8*8, activation='tanh'))
         model.add(layers.BatchNormalization())
         model.add(layers.Reshape((128, 8, 8), input_shape=(128*8*8, )))
@@ -45,6 +48,7 @@ class GAN(models.Sequential):
     def DISCRIMINATOR(self):
         model = models.Sequential()
         model.add(layers.Conv2D(64, (5, 5), padding='same', activation='tanh', input_shape=(3, 32, 32)))
+        model.add(layers.BatchNormalization())
         model.add(layers.MaxPool2D(pool_size=(2, 2)))
         model.add(layers.Conv2D(128, (5, 5), activation='tanh'))
         model.add(layers.MaxPool2D(pool_size=(2, 2)))
@@ -66,8 +70,7 @@ class GAN(models.Sequential):
         d_loss = self.discriminator.train_on_batch(xw, y2)
         z = self.get_z(In)
         self.discriminator.trainable = False
-        for i in range(2):
-            g_loss = self.train_on_batch(z, np.array([1]*In))
+        g_loss = self.train_on_batch(z, np.array([1]*In))
         self.discriminator.trainable = True
 
         return d_loss, g_loss
@@ -92,7 +95,7 @@ def train():
     BATCH_SIZE = 100
     epochs  = 5000
     output_fold = 'gan_generated'
-    input_dim = 64
+    input_dim = 256
     n_train = 10000
     os.makedirs(output_fold, exist_ok=True)
     X_train = load_data(n_train)
