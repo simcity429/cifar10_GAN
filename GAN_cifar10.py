@@ -23,8 +23,8 @@ class GAN(models.Sequential):
         self.compile_all()
 
     def compile_all(self):
-        d_optim = optimizers.Adam(lr=0.0002, beta_1=0.9, beta_2=0.999)
-        g_optim = optimizers.Adam(lr=0.0006, beta_1=0.9, beta_2=0.999)
+        d_optim = optimizers.Adam(amsgrad=True)
+        g_optim = optimizers.SGD(lr=0.00025, momentum=0.9, nesterov=True)
         self.compile(loss='binary_crossentropy', optimizer=g_optim)
         self.discriminator.trainable = True
         self.discriminator.compile(loss='binary_crossentropy', optimizer=d_optim)
@@ -33,9 +33,6 @@ class GAN(models.Sequential):
         input_dim = self.input_dim
         model = models.Sequential()
         model.add(layers.Dense(1024, activation='tanh', input_dim=input_dim))
-        model.add(layers.Reshape((32, 32), input_shape=(1024, )))
-        model.add(layers.Conv1D(32, (32), activation='relu', padding='same'))
-        model.add(layers.Reshape((1024,), input_shape=(32, 32)))
         model.add(layers.Dense(128*8*8, activation='tanh'))
         model.add(layers.BatchNormalization())
         model.add(layers.Reshape((128, 8, 8), input_shape=(128*8*8, )))
@@ -48,7 +45,6 @@ class GAN(models.Sequential):
     def DISCRIMINATOR(self):
         model = models.Sequential()
         model.add(layers.Conv2D(64, (5, 5), padding='same', activation='tanh', input_shape=(3, 32, 32)))
-        model.add(layers.BatchNormalization())
         model.add(layers.MaxPool2D(pool_size=(2, 2)))
         model.add(layers.Conv2D(128, (5, 5), activation='tanh'))
         model.add(layers.MaxPool2D(pool_size=(2, 2)))
@@ -95,7 +91,7 @@ def train():
     BATCH_SIZE = 100
     epochs  = 5000
     output_fold = 'gan_generated'
-    input_dim = 256
+    input_dim = 64
     n_train = 10000
     os.makedirs(output_fold, exist_ok=True)
     X_train = load_data(n_train)
@@ -120,7 +116,7 @@ def train():
             d_loss_l.append(d_loss)
             g_loss_l.append(g_loss)
             print('d_loss, g_loss', d_loss, g_loss)
-        if epoch % 10 == 1:
+        if True: #epoch % 10 == 1:
             z = gan.get_z(x.shape[0])
             w = gan.generator.predict(z, verbose=0)
             save_image(w, output_fold, epoch, '_')
